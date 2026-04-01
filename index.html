@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cryptography Tools</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      width: 520px;
+      background: #eee;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+
+    .tabs {
+      display: flex;
+      background: #222;
+    }
+
+    .tabs button {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      color: white;
+      background: #222;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .tabs button.active {
+      background: #667eea;
+    }
+
+    .content {
+      display: none;
+      padding: 25px;
+    }
+
+    .content.active {
+      display: block;
+    }
+
+    h2 {
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 8px;
+      margin-bottom: 15px;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 10px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+
+    button.action {
+      margin-top: 10px;
+      margin-right: 10px;
+      padding: 10px 15px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .result {
+      background: #d0e7ff;
+      padding: 12px;
+      margin-top: 15px;
+      border-radius: 5px;
+      min-height: 20px;
+    }
+
+    .error {
+      background: #ffd6d6;
+      color: #b00020;
+    }
+
+    .info {
+      background: #ddd;
+      padding: 12px;
+      margin-top: 15px;
+      border-radius: 5px;
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="tabs">
+    <button class="active" onclick="openTab('caesar', this)">🔐 Caesar Cipher</button>
+    <button onclick="openTab('rail', this)">🚂 Rail Fence</button>
+    <button onclick="openTab('dh', this)">🔑 Diffie-Hellman</button>
+  </div>
+
+  <!-- CAESAR -->
+  <div id="caesar" class="content active">
+    <h2>🔐 Caesar Cipher</h2>
+
+    <label>Text:</label>
+    <textarea id="cText"></textarea>
+
+    <label>Shift (0-25):</label>
+    <input type="number" id="shift">
+
+    <button class="action" onclick="caesarEncrypt()">Encrypt</button>
+    <button class="action" onclick="caesarDecrypt()">Decrypt</button>
+
+    <div id="cResult" class="result"></div>
+  </div>
+
+  <!-- RAIL -->
+  <div id="rail" class="content">
+    <h2>🚂 Rail Fence Cipher</h2>
+
+    <label>Text:</label>
+    <textarea id="rText"></textarea>
+
+    <label>Rails:</label>
+    <input type="number" id="rails">
+
+    <button class="action" onclick="railEncrypt()">Encrypt</button>
+    <button class="action" onclick="railDecrypt()">Decrypt</button>
+
+    <div id="rResult" class="result"></div>
+  </div>
+
+  <!-- DIFFIE -->
+  <div id="dh" class="content">
+    <h2>🔑 Diffie-Hellman Key Exchange</h2>
+
+    <label>Prime Number (q):</label>
+    <input type="number" id="q" onchange="loadRoots()">
+
+    <label>Primitive Root (alpha):</label>
+    <select id="alpha"></select>
+
+    <div class="row">
+      <div>
+        <label>Private Key (XA):</label>
+        <input type="number" id="xa">
+      </div>
+      <div>
+        <label>Private Key (XB):</label>
+        <input type="number" id="xb">
+      </div>
+    </div>
+
+    <button class="action" onclick="dh()">Generate Keys</button>
+
+    <div id="dhResult" class="result"></div>
+
+    <div class="info">
+      • q must be prime <br>
+      • alpha must be primitive root <br>
+      • 1 &lt; XA, XB &lt; q
+    </div>
+  </div>
+
+</div>
+
+<script>
+
+// TAB SWITCH
+function openTab(id, btn){
+  document.querySelectorAll('.content').forEach(c=>c.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// CAESAR
+function caesarEncrypt(){
+  let t = document.getElementById("cText").value;
+  let s = parseInt(document.getElementById("shift").value);
+  let box = document.getElementById("cResult");
+
+  if (isNaN(s) || s < 0 || s > 25) {
+    box.classList.add("error");
+    box.innerText = "❌ Shift must be between 0 and 25";
+    return;
+  }
+
+  box.classList.remove("error");
+
+  let r = "";
+  for(let i=0;i<t.length;i++){
+    let c=t.charCodeAt(i);
+    if(c>=65&&c<=90) r+=String.fromCharCode((c-65+s)%26+65);
+    else if(c>=97&&c<=122) r+=String.fromCharCode((c-97+s)%26+97);
+    else r+=t[i];
+  }
+
+  box.innerText = r;
+}
+
+function caesarDecrypt(){
+  let t = document.getElementById("cText").value;
+  let s = parseInt(document.getElementById("shift").value);
+  let box = document.getElementById("cResult");
+
+  if (isNaN(s) || s < 0 || s > 25) {
+    box.classList.add("error");
+    box.innerText = "❌ Shift must be between 0 and 25";
+    return;
+  }
+
+  box.classList.remove("error");
+
+  let r = "";
+  for(let i=0;i<t.length;i++){
+    let c=t.charCodeAt(i);
+    if(c>=65&&c<=90) r+=String.fromCharCode((c-65-s+26)%26+65);
+    else if(c>=97&&c<=122) r+=String.fromCharCode((c-97-s+26)%26+97);
+    else r+=t[i];
+  }
+
+  box.innerText = r;
+}
+
+// RAIL
+function railEncrypt(){
+  let t=document.getElementById("rText").value;
+  let n=parseInt(document.getElementById("rails").value);
+  let arr=Array.from({length:n},()=>[]);
+  let row=0,dir=1;
+
+  for(let ch of t){
+    arr[row].push(ch);
+    row+=dir;
+    if(row==0||row==n-1) dir*=-1;
+  }
+
+  document.getElementById("rResult").innerText=arr.flat().join('');
+}
+
+function railDecrypt(){
+  document.getElementById("rResult").innerText="Decrypt logic optional";
+}
+
+// PRIME
+function isPrime(n){
+  if(n<2) return false;
+  for(let i=2;i<=Math.sqrt(n);i++){
+    if(n%i===0) return false;
+  }
+  return true;
+}
+
+// ROOTS
+function loadRoots(){
+  let q=parseInt(document.getElementById("q").value);
+  let dropdown=document.getElementById("alpha");
+  dropdown.innerHTML="";
+
+  if(!isPrime(q)){
+    dropdown.innerHTML="<option>Not Prime</option>";
+    return;
+  }
+
+  for(let g=2;g<q;g++){
+    let set=new Set();
+    for(let i=1;i<q;i++){
+      set.add((g**i)%q);
+    }
+    if(set.size===q-1){
+      let opt=document.createElement("option");
+      opt.value=g;
+      opt.text=g;
+      dropdown.appendChild(opt);
+    }
+  }
+}
+
+// DIFFIE
+function dh(){
+  let q=parseInt(document.getElementById("q").value);
+  let a=parseInt(document.getElementById("alpha").value);
+  let xa=parseInt(document.getElementById("xa").value);
+  let xb=parseInt(document.getElementById("xb").value);
+
+  let ya=(a**xa)%q;
+  let yb=(a**xb)%q;
+
+  let ka=(yb**xa)%q;
+  let kb=(ya**xb)%q;
+
+  document.getElementById("dhResult").innerText =
+    "YA="+ya+" YB="+yb+" | KA="+ka+" KB="+kb +
+    (ka===kb ? " ✅ Match" : " ❌ Not Match");
+}
+
+</script>
+
+</body>
+</html>
