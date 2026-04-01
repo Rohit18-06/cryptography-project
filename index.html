@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <title>Cryptography Toolkit</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #f5efe6;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+    }
+
+    .nav button {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background: #2e7d32;
+      color: white;
+    }
+
+    .box {
+      display: none;
+      background: #fff;
+      padding: 25px;
+      margin: 20px auto;
+      width: 400px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
+    }
+
+    input {
+      width: 90%;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button.action {
+      background: #7b1fa2;
+      color: white;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>🔐 Cryptography Toolkit</h1>
+  <div class="nav">
+    <button onclick="show('caesar')">Caesar Cipher</button>
+    <button onclick="show('rail')">Rail Fence</button>
+    <button onclick="show('diffie')">Diffie-Hellman</button>
+  </div>
+
+  <!-- CAESAR -->
+  <div id="caesar" class="box">
+    <h2>Caesar Cipher</h2>
+    <input id="c_text" placeholder="Enter text">
+    <input id="c_shift" type="number" placeholder="Shift">
+    <br>
+    <button class="action" onclick="cEncrypt()">Encrypt</button>
+    <button class="action" onclick="cDecrypt()">Decrypt</button>
+    <p id="c_out"></p>
+  </div>
+
+  <!-- RAIL -->
+  <div id="rail" class="box">
+    <h2>Rail Fence Cipher</h2>
+    <input id="r_text" placeholder="Enter text">
+    <input id="r_rails" type="number" placeholder="Rails">
+    <br>
+    <button class="action" onclick="rEncrypt()">Encrypt</button>
+    <button class="action" onclick="rDecrypt()">Decrypt</button>
+    <p id="r_out"></p>
+  </div>
+
+  <!-- DIFFIE-HELLMAN -->
+  <div id="diffie" class="box">
+    <h2>Diffie-Hellman Key Exchange</h2>
+
+    <input id="p" placeholder="Enter prime number (p)">
+    <input id="g" placeholder="Enter base (g)">
+    <input id="a" placeholder="Alice private key">
+    <input id="b" placeholder="Bob private key">
+
+    <br>
+    <button class="action" onclick="calculateDH()">Generate Keys</button>
+
+    <p id="dh_out"></p>
+  </div>
+
+  <script>
+
+    // NAVIGATION
+    function show(id) {
+      document.querySelectorAll('.box').forEach(b => b.style.display = 'none');
+      document.getElementById(id).style.display = 'block';
+    }
+
+    // DEFAULT
+    show('caesar');
+
+    // CAESAR
+    function caesar(text, shift) {
+      return text.split('').map(ch => {
+        if (/[a-z]/i.test(ch)) {
+          let base = ch === ch.toUpperCase() ? 65 : 97;
+          return String.fromCharCode((ch.charCodeAt(0) - base + shift + 26) % 26 + base);
+        }
+        return ch;
+      }).join('');
+    }
+    function cEncrypt() {
+      let t = document.getElementById('c_text').value;
+      let s = +document.getElementById('c_shift').value;
+      document.getElementById('c_out').innerText = "Encrypted: " + caesar(t, s);
+    }
+    function cDecrypt() {
+      let t = document.getElementById('c_text').value;
+      let s = +document.getElementById('c_shift').value;
+      document.getElementById('c_out').innerText = "Decrypted: " + caesar(t, -s);
+    }
+    // RAIL
+    function railEncrypt(text, rails) {
+      if (rails <= 1) return text;
+      let f = Array.from({ length: rails }, () => []);
+      let r = 0, d = 1;
+      for (let ch of text) {
+        f[r].push(ch);
+        r += d;
+        if (r == 0 || r == rails - 1) d *= -1;
+      }
+      return f.flat().join('');
+    }
+    function railDecrypt(cipher, rails) {
+      let n = cipher.length, p = [], r = 0, d = 1;
+      for (let i = 0; i < n; i++) {
+        p.push(r);
+        r += d;
+        if (r == 0 || r == rails - 1) d *= -1;
+      }
+      let s = [...p.keys()].sort((a, b) => p[a] - p[b]);
+      let res = Array(n);
+      cipher.split('').forEach((c, i) => res[s[i]] = c);
+      return res.join('');
+    }
+    function rEncrypt() {
+      let t = document.getElementById('r_text').value;
+      let r = +document.getElementById('r_rails').value;
+      document.getElementById('r_out').innerText = "Encrypted: " + railEncrypt(t, r);
+    }
+    function rDecrypt() {
+      let t = document.getElementById('r_text').value;
+      let r = +document.getElementById('r_rails').value;
+      document.getElementById('r_out').innerText = "Decrypted: " + railDecrypt(t, r);
+    }
+    function modExp(base, exp, mod) {
+      let result = 1;
+      base = base % mod;
+      while (exp > 0) {
+        if (exp % 2 === 1) result = (result * base) % mod;
+        exp = Math.floor(exp / 2);
+        base = (base * base) % mod;
+      }
+      return result;
+    }
+    function calculateDH() {
+      let p = parseInt(document.getElementById('p').value);
+      let g = parseInt(document.getElementById('g').value);
+      let a = parseInt(document.getElementById('a').value);
+      let b = parseInt(document.getElementById('b').value);
+      if (!p || !g || !a || !b) {
+        document.getElementById('dh_out').innerText = "⚠ Enter all values!";
+        return;
+      }
+      let A = modExp(g, a, p);
+      let B = modExp(g, b, p);
+      let key1 = modExp(B, a, p);
+      let key2 = modExp(A, b, p);
+      document.getElementById('dh_out').innerText =
+        "Alice Public Key: " + A + "\n" +
+        "Bob Public Key: " + B + "\n" +
+        "Shared Key (Alice): " + key1 + "\n" +
+        "Shared Key (Bob): " + key2;
+    }
+  </script>
+</body>
+
+</html>
