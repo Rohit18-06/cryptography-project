@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cryptography Tools - Caesar | Rail Fence | Diffie-Hellman</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+      max-width: 600px;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    .tabs {
+      display: flex;
+      background: #333;
+      border-bottom: 3px solid #667eea;
+    }
+
+    .tab-button {
+      flex: 1;
+      padding: 15px;
+      background: #333;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+
+    .tab-button:hover {
+      background: #555;
+    }
+
+    .tab-button.active {
+      background: #667eea;
+      border-bottom: 3px solid #667eea;
+    }
+
+    .tab-content {
+      display: none;
+      padding: 30px;
+      animation: fadeIn 0.3s;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #667eea;
+      padding-bottom: 10px;
+    }
+
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+      color: #333;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-family: Arial;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+    }
+
+    button {
+      display: inline-block;
+      margin-top: 20px;
+      margin-right: 10px;
+      padding: 10px 20px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #764ba2;
+    }
+
+    .message {
+      color: #d32f2f;
+      margin-top: 10px;
+      padding: 10px;
+      background: #ffebee;
+      border-radius: 5px;
+      display: none;
+    }
+
+    .message.show {
+      display: block;
+    }
+
+    .result {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 5px;
+      display: none;
+    }
+
+    .result.show {
+      display: block;
+    }
+
+    .result-label {
+      font-weight: bold;
+      color: #2e7d32;
+      margin-bottom: 8px;
+    }
+
+    .result-text {
+      background: white;
+      padding: 10px;
+      border-radius: 3px;
+      word-break: break-all;
+      font-family: monospace;
+    }
+
+    .constraints {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 20px;
+      font-size: 13px;
+    }
+
+    .constraints ul {
+      list-style-position: inside;
+      color: #666;
+    }
+
+    .constraints li {
+      margin: 5px 0;
+    }
+
+    .dh-results {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 5px;
+      display: none;
+    }
+
+    .dh-results.show {
+      display: block;
+    }
+
+    .dh-results p {
+      margin: 8px 0;
+      font-weight: bold;
+    }
+
+    .public-keys {
+      color: #1976d2;
+    }
+
+    .shared-key {
+      color: #d32f2f;
+    }
+
+    .match {
+      color: #4caf50;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .no-match {
+      color: #d32f2f;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .row input {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-button active" onclick="switchTab('caesar')">🔐 Caesar Cipher</button>
+    <button class="tab-button" onclick="switchTab('rail')">🚂 Rail Fence</button>
+    <button class="tab-button" onclick="switchTab('diffie')">🔑 Diffie-Hellman</button>
+  </div>
+
+  <!-- ========== CAESAR CIPHER TAB ========== -->
+  <div id="caesar" class="tab-content active">
+    <h2>🔐 Caesar Cipher</h2>
+    <form method="POST">
+      <input type="hidden" name="algorithm" value="caesar">
+
+      <label for="caesar_text">Text to encrypt/decrypt:</label>
+      <textarea id="caesar_text" name="caesar_text">{{ caesar_text }}</textarea>
+
+      <label for="caesar_shift">Shift Value (0-25):</label>
+      <input type="number" id="caesar_shift" name="caesar_shift" min="0" max="25" value="{{ caesar_shift }}">
+
+      <div>
+        <button type="submit" name="action" value="encrypt">Encrypt</button>
+        <button type="submit" name="action" value="decrypt">Decrypt</button>
+      </div>
+
+      {% if caesar_message %}
+      <div class="message show">{{ caesar_message }}</div>
+      {% endif %}
+
+      {% if caesar_result %}
+      <div class="result show">
+        <div class="result-label">{{ caesar_result_label }}</div>
+        <div class="result-text">{{ caesar_result }}</div>
+      </div>
+      {% endif %}
+
+      <div class="constraints">
+        <b>ℹ️ How it works:</b>
+        <ul>
+          <li>Shifts each letter by the specified amount in the alphabet</li>
+          <li>Preserves case (uppercase/lowercase)</li>
+          <li>Numbers and symbols remain unchanged</li>
+        </ul>
+      </div>
+    </form>
+  </div>
+
+  <!-- ========== RAIL FENCE TAB ========== -->
+  <div id="rail" class="tab-content">
+    <h2>🚂 Rail Fence Cipher</h2>
+    <form method="POST">
+      <input type="hidden" name="algorithm" value="rail">
+
+      <label for="rail_text">Text to encrypt/decrypt:</label>
+      <textarea id="rail_text" name="rail_text">{{ rail_text }}</textarea>
+
+      <label for="rail_rails">Number of Rails:</label>
+      <input type="number" id="rail_rails" name="rail_rails" min="2" value="{{ rail_rails }}">
+
+      <div>
+        <button type="submit" name="action" value="encrypt">Encrypt</button>
+        <button type="submit" name="action" value="decrypt">Decrypt</button>
+      </div>
+
+      {% if rail_message %}
+      <div class="message show">{{ rail_message }}</div>
+      {% endif %}
+
+      {% if rail_result %}
+      <div class="result show">
+        <div class="result-label">{{ rail_result_label }}</div>
+        <div class="result-text">{{ rail_result }}</div>
+      </div>
+      {% endif %}
+
+      <div class="constraints">
+        <b>ℹ️ How it works:</b>
+        <ul>
+          <li>Arranges text in zigzag pattern across specified number of rails</li>
+          <li>Reads rows from top to bottom to create ciphertext</li>
+          <li>Rails must be less than text length</li>
+        </ul>
+      </div>
+    </form>
+  </div>
+
+  <!-- ========== DIFFIE-HELLMAN TAB ========== -->
+  <div id="diffie" class="tab-content">
+    <h2>🔑 Diffie-Hellman Key Exchange</h2>
+    <form method="POST">
+      <input type="hidden" name="algorithm" value="diffie">
+
+      <label for="dh_q">Prime Number (q):</label>
+      <input type="number" id="dh_q" name="dh_q" value="{{ dh_q }}" onchange="loadRoots()">
+
+      <label for="dh_alpha">Primitive Root (alpha):</label>
+      <select id="dh_alpha" name="dh_alpha">
+        <option value="">Select primitive root</option>
+      </select>
+
+      <div class="row">
+        <div>
+          <label for="dh_xa">Private Key (XA):</label>
+          <input type="number" id="dh_xa" name="dh_xa" value="{{ dh_xa }}">
+        </div>
+        <div>
+          <label for="dh_xb">Private Key (XB):</label>
+          <input type="number" id="dh_xb" name="dh_xb" value="{{ dh_xb }}">
+        </div>
+      </div>
+
+      <button type="submit">Generate Keys</button>
+
+      {% if dh_message %}
+      <div class="message show">{{ dh_message }}</div>
+      {% endif %}
+
+      {% if dh_ya %}
+      <div class="dh-results show">
+        <p class="public-keys">📤 Public Keys:</p>
+        <p>YA = {{ dh_ya }}</p>
+        <p>YB = {{ dh_yb }}</p>
+
+        <p class="shared-key">🔐 Shared Secret Keys:</p>
+        <p>KA = {{ dh_ka }}</p>
+        <p>KB = {{ dh_kb }}</p>
+
+        {% if dh_ka == dh_kb %}
+        <p class="match">✅ Keys Match! Communication is secure.</p>
+        {% else %}
+        <p class="no-match">❌ Keys Do Not Match!</p>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <div class="constraints">
+        <b>ℹ️ How it works:</b>
+        <ul>
+          <li>q must be a prime number</li>
+          <li>Alpha must be a primitive root of q</li>
+          <li>1 &lt; XA, XB &lt; q</li>
+          <li>Both parties derive the same shared secret key independently</li>
+        </ul>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+<script>
+  function switchTab(tabName) {
+    // Hide all tabs
+    const tabs = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => tab.classList.remove('active'));
+
+    // Remove active class from all buttons
+    const buttons = document.querySelectorAll('.tab-button');
+    buttons.forEach(btn => btn.classList.remove('active'));
+
+    // Show selected tab
+    document.getElementById(tabName).classList.add('active');
+
+    // Add active class to clicked button
+    event.target.classList.add('active');
+  }
+
+  function loadRoots() {
+    let q = document.getElementById("dh_q").value;
+    let selectedAlpha = "{{ dh_alpha }}";
+
+    if (q === "") return;
+
+    fetch("/get_roots", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ q: q })
+    })
+      .then(res => res.json())
+      .then(data => {
+        let dropdown = document.getElementById("dh_alpha");
+        dropdown.innerHTML = '<option value="">Select primitive root</option>';
+
+        if (data.error) return;
+
+        data.roots.forEach(root => {
+          let opt = document.createElement("option");
+          opt.value = root;
+          opt.textContent = root;
+
+          if (root == selectedAlpha) {
+            opt.selected = true;
+          }
+
+          dropdown.appendChild(opt);
+        });
+      });
+  }
+
+  // Load roots on page load
+  window.onload = loadRoots;
+</script>
+
+</body>
+</html>
